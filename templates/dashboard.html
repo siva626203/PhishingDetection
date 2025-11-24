@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Phishing Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+        }
+
+        .stat-card.danger {
+            border-left-color: #e74c3c;
+        }
+
+        .stat-card.success {
+            border-left-color: #27ae60;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card.danger .stat-value {
+            color: #e74c3c;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .url-input-group input {
+            flex: 1;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .result-container.phishing {
+            background: #ffe0e0;
+            border: 2px solid #e74c3c;
+        }
+
+        .result-container.legitimate {
+            background: #e0ffe0;
+            border: 2px solid #27ae60;
+        }
+
+        .result-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-container.phishing .result-title {
+            color: #e74c3c;
+        }
+
+        .result-container.legitimate .result-title {
+            color: #27ae60;
+        }
+
+        .confidence-bar {
+            background: #ddd;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #e74c3c);
+            transition: width 0.5s ease;
+        }
+
+        .result-container.legitimate .confidence-fill {
+            background: linear-gradient(90deg, #27ae60, #27ae60);
+        }
+
+        .features-list {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 5px;
+        }
+
+        .features-list h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+
+        .feature-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 12px;
+            color: white;
+        }
+
+        .feature-item.danger .feature-icon {
+            background: #e74c3c;
+        }
+
+        .feature-item.safe .feature-icon {
+            background: #27ae60;
+        }
+
+        .reports-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .reports-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .reports-table td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .reports-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.phishing {
+            background: #ffe0e0;
+            color: #e74c3c;
+        }
+
+        .badge.legitimate {
+            background: #e0ffe0;
+            color: #27ae60;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .main-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🛡️ AI-Based Phishing Detection System</h1>
+            <p>Advanced email and URL analysis powered by machine learning and NLP</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-value" id="totalStats">0</div>
+                <div class="stat-label">Total Analyzed</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-value" id="phishingStats">0</div>
+                <div class="stat-label">Phishing Detected</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-value" id="legitimateStats">0</div>
+                <div class="stat-label">Legitimate</div>
+            </div>
+        </div>
+
+        <!-- Main Analyzer Section -->
+        <div class="main-section">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('analyzer')">Analyzer</button>
+                <button class="tab" onclick="switchTab('reports')">Reports</button>
+                <button class="tab" onclick="switchTab('alerts')">Alerts</button>
+            </div>
+
+            <!-- Analyzer Tab -->
+            <div id="analyzer" class="tab-content active">
+                <h2 class="section-title">📧 Email Analysis</h2>
+                <form id="analyzeForm">
+                    <div class="form-group">
+                        <label>Sender Email</label>
+                        <input type="email" id="senderEmail" placeholder="sender@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" id="subject" placeholder="Email subject" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Content</label>
+                        <textarea id="content" placeholder="Paste email content here..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>URLs (one per line)</label>
+                        <textarea id="urls" placeholder="https://example.com&#10;https://another.com"></textarea>
+                    </div>
+
+                    <button type="button" class="btn-primary" onclick="analyzeEmail()">
+                        🔍 Analyze Email
+                    </button>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analyzing email...</p>
+                </div>
+
+                <div class="result-container" id="resultContainer">
+                    <div class="result-title" id="resultTitle"></div>
+                    <p id="resultMessage"></p>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                    </div>
+                    <div id="confidenceText"></div>
+                    <div class="features-list" id="featuresList"></div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reports" class="tab-content">
+                <h2 class="section-title">📋 Detection Reports</h2>
+                <table class="reports-table" id="reportsTable">
+                    <thead>
+                        <tr>
+                            <th>Sender</th>
+                            <th>Subject</th>
+                            <th>Classification</th>
+                            <th>Confidence</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsList">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #999;">No reports yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Alerts Tab -->
+            <div id="alerts" class="tab-content">
+                <h2 class="section-title">🚨 Recent Alerts</h2>
+                <div id="alertsList" style="max-height: 500px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'reports') loadReports();
+            if (tabName === 'alerts') loadAlerts();
+        }
+
+        function analyzeEmail() {
+            const emailData = {
+                sender: document.getElementById('senderEmail').value,
+                subject: document.getElementById('subject').value,
+                content: document.getElementById('content').value,
+                urls: document.getElementById('urls').value.split('\n').filter(u => u.trim())
+            };
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+
+            fetch(`${API_BASE}/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(emailData)
+            })
+            .then(r => r.json())
+            .then(data => displayResult(data))
+            .catch(e => console.error('Error:', e))
+            .finally(() => document.getElementById('loading').style.display = 'none');
+        }
+
+        function displayResult(data) {
+            const isPhishing = data.classification === 'phishing';
+            const resultEl = document.getElementById('resultContainer');
+            
+            resultEl.className = `result-container ${data.classification}`;
+            document.getElementById('resultTitle').textContent = 
+                isPhishing ? '⚠️ PHISHING DETECTED' : '✅ LEGITIMATE EMAIL';
+            
+            document.getElementById('resultMessage').textContent = 
+                isPhishing ? 
+                'This email has been identified as a potential phishing attempt. Be cautious!' :
+                'This email appears to be legitimate based on our analysis.';
+
+            const confidencePercent = Math.min(Math.max(data.confidence * 100, 0), 100);
+            document.getElementById('confidenceFill').style.width = confidencePercent + '%';
+            document.getElementById('confidenceText').innerHTML = 
+                `<strong>Confidence Score:</strong> ${confidencePercent.toFixed(1)}%`;
+
+            let featuresHTML = '<h4>Detected Features:</h4>';
+            Object.entries(data.detected_features).forEach(([key, value]) => {
+                const isDanger = value === 1 || value > 0;
+                featuresHTML += `
+                    <div class="feature-item ${isDanger ? 'danger' : 'safe'}">
+                        <div class="feature-icon">${isDanger ? '⚠️' : '✓'}</div>
+                        <span>${key.replace(/_/g, ' ')}: ${value}</span>
+                    </div>
+                `;
+            });
+
+            if (data.sender_issues && data.sender_issues.length > 0) {
+                featuresHTML += '<h4 style="margin-top: 15px;">Sender Issues:</h4>';
+                data.sender_issues.forEach(issue => {
+                    featuresHTML += `
+                        <div class="feature-item danger">
+                            <div class="feature-icon">⚠️</div>
+                            <span>${issue}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('featuresList').innerHTML = featuresHTML;
+            resultEl.style.display = 'block';
+            loadStats();
+        }
+
+        function loadStats() {
+            fetch(`${API_BASE}/statistics`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('totalStats').textContent = data.total_analyzed;
+                    document.getElementById('phishingStats').textContent = data.phishing_detected;
+                    document.getElementById('legitimateStats').textContent = data.legitimate;
+                    document.getElementById('accuracyStats').textContent = data.accuracy_percentage + '%';
+                });
+        }
+
+        function loadReports() {
+            fetch(`${API_BASE}/reports`)
+                .then(r => r.json())
+                .then(data => {
+                    const tbody = document.getElementById('reportsList');
+                    tbody.innerHTML = data.reports.map(r => `
+                        <tr>
+                            <td>${r.sender_email || 'Unknown'}</td>
+                            <td>${r.subject || 'No Subject'}</td>
+                            <td><span class="badge ${r.classification}">${r.classification}</span></td>
+                            <td>${r.confidence_score}</td>
+                            <td>${r.timestamp}</td>
+                        </tr>
+                    `).join('') || '<tr><td colspan="5">No reports yet</td></tr>';
+                });
+        }
+
+        function loadAlerts() {
+            fetch(`${API_BASE}/alerts`)
+                .then(r => r.json())
+                .then(data => {
+                    const alertsList = document.getElementById('alertsList');
+                    alertsList.innerHTML = data.alerts.map(a => `
+                        <div style="padding: 15px; background: #f8f9fa; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid #e74c3c;">
+                            <strong>${a.type}</strong> - <span style="color: #999;">${a.created_at}</span>
+                            <p style="margin: 10px 0 0; color: #666;">${a.message}</p>
+                        </div>
+                    `).join('') || '<p style="color: #999;">No recent alerts</p>';
+                });
+        }
+
+        // Load initial stats
+        loadStats();
+    </script>
+</body>
+</html>
